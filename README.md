@@ -18,4 +18,4 @@
 
 **Vibe coding tool for:** quick demos or prototypes — because it generates full app instantly.
 
-**AI pair programming for:** real-world projects — because I understand the code and can easily modify it.
+**AI pair programming for:** real-world projects —-- because I understand the code and can easily modify it.
