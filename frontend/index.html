@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    <!-- Add Google Fonts and a nice stylesheet -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --chat-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --user-msg: #3b82f6;
+            --bot-msg: #334155;
+            --border-color: #334155;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 90vh;
+            background-color: var(--chat-bg);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-header {
+            padding: 20px;
+            background-color: var(--chat-bg);
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 10px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease-out;
+            word-wrap: break-word;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            background-color: var(--user-msg);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            background-color: var(--bot-msg);
+            color: var(--text-color);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background-color: var(--chat-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            outline: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .send-button {
+            padding: 12px 24px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .send-button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .send-button:active {
+            transform: scale(0.98);
+        }
+
+        .send-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background-color: transparent;
+            padding: 0 16px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+        
+        .typing-indicator.active {
+            display: block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        AI Chatbot
+    </div>
+    <div class="chat-messages" id="chat-messages">
+        <div class="message assistant">Hello! I am your AI assistant. How can I help you today?</div>
+    </div>
+    <div class="typing-indicator" id="typing-indicator">AI is typing...</div>
+    <div class="chat-input-container">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Type your message..." autocomplete="off" />
+        <button id="send-button" class="send-button">Send</button>
+    </div>
+</div>
+
+<script>
+    // State to hold conversation history
+    const messages = [];
+
+    const chatMessagesEl = document.getElementById('chat-messages');
+    const chatInputEl = document.getElementById('chat-input');
+    const sendButtonEl = document.getElementById('send-button');
+    const typingIndicatorEl = document.getElementById('typing-indicator');
+
+    // Make it feel responsive
+    chatInputEl.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    sendButtonEl.addEventListener('click', sendMessage);
+
+    function addMessageToUI(role, content) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', role);
+        msgDiv.textContent = content;
+        chatMessagesEl.appendChild(msgDiv);
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const content = chatInputEl.value.trim();
+        if (!content) return;
+
+        // Push user message to state and UI
+        messages.push({ role: 'user', content: content });
+        addMessageToUI('user', content);
+        chatInputEl.value = '';
+
+        // Disable input while waiting
+        chatInputEl.disabled = true;
+        sendButtonEl.disabled = true;
+        typingIndicatorEl.classList.add('active');
+
+        try {
+            const response = await fetch('http://localhost:3000/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ messages })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            
+            if (data.reply) {
+                // Save assistant message to state and UI
+                messages.push(data.reply);
+                addMessageToUI('assistant', data.reply.content);
+            } else {
+                throw new Error('No valid reply from API');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            addMessageToUI('assistant', 'Sorry, I encountered an error. Please ensure the backend is running.');
+        } finally {
+            chatInputEl.disabled = false;
+            sendButtonEl.disabled = false;
+            typingIndicatorEl.classList.remove('active');
+            chatInputEl.focus();
+        }
+    }
+</script>
+
+</body>
+</html>
